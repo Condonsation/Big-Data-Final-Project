@@ -22,13 +22,31 @@ glimpse(credit_risk_df)
 # Default Rate: 7108/(7108+25473) = 0.218164
 # Total % NAs: (895 + 3116) / (32,581 * 12) = 0.01025905
 
+
+##Create visulizations of relationships
 ggplot(credit_risk_df, aes(person_age, loan_amnt ,color = loan_status)) + 
   geom_point()
 
 ggplot(credit_risk_df, aes(person_age, loan_int_rate)) + 
   geom_point()
 
+ggplot(credit_risk_df, aes(loan_percent_income, fill = loan_grade)) + 
+  geom_histogram(stat = "count")
+
+ggplot(credit_risk_df, aes(loan_status, fill = loan_grade)) + 
+  geom_histogram(stat = "count")
+
+ggplot(credit_risk_df, aes(cb_person_default_on_file, fill = loan_grade)) + 
+  geom_histogram(stat = "count")
+
 ggplot(credit_risk_df, aes(person_age, fill = loan_status)) + 
   geom_histogram(stat = "count") +
   facet_wrap(~loan_grade)
-cor(credit_risk_df)  
+
+ggplot(credit_risk_df, aes(loan_percent_income, fill = loan_status)) + 
+  geom_histogram(stat = "count") +
+  facet_wrap(~loan_grade)
+
+ggplot(credit_risk_df, aes(loan_percent_income, fill = loan_grade)) + 
+  geom_histogram(stat = "count") +
+  facet_wrap(~loan_status)
