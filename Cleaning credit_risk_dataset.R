@@ -30,8 +30,13 @@ View(subset(credit_risk_df, person_age > 120)) ##Five people over 120
 credit_risk_df$person_age[credit_risk_df$person_age > 120]<-NA ##Make 5 obs > 120 years equal to NA
 plot(credit_risk_df$person_age, credit_risk_df$person_emp_length) 
 credit_risk_df$person_emp_length[credit_risk_df$person_emp_length > 120]<-NA ##Make 2 obs > 120 years equal to NA
+write.csv(credit_risk_df, 'credit_risk_dataset (Cleaned).csv', row.names = FALSE) ##Save cleaned file as CSV
+
 
 ##Create visulizations of relationships
+plot(credit_risk_df$person_age, log(credit_risk_df$person_income))
+hist(log(credit_risk_df$person_income))
+
 ggplot(credit_risk_df, aes(person_age, loan_amnt ,color = loan_status)) + 
   geom_point()
 
