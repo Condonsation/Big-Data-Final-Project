@@ -58,6 +58,9 @@ ggplot(credit_risk_df, aes(person_age, loan_int_rate, color = loan_grade)) +
 ggplot(credit_risk_df, aes(loan_int_rate, cb_person_default_on_file, color = loan_status)) + 
   geom_point() ##High correlation between int. rate and loan grade
 
+ggplot(credit_risk_df, aes(loan_status, fill = person_home_ownership)) + 
+  geom_histogram(stat = "count") ##High corr between rent and default
+
 ggplot(credit_risk_df, aes(loan_percent_income, fill = loan_grade)) + 
   geom_histogram(stat = "count")
 
