@@ -20,6 +20,8 @@ Valid <- credit_risk_df[-trainIndex,]
 M_LOG<-glm(loan_status ~., data = Train, family = "binomial", na.action = na.omit)
 summary(M_LOG)
 exp(cbind(M_LOG$coefficients, confint(M_LOG)))
+confusionMatrix(table(predict(M_LOG, Valid, type="response") >= .5,
+                      Valid$loan_status == 1), positive='TRUE')
 
 ##Loop through threshhold values and print out accuracy of each
 p = .1
