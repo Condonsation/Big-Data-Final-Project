@@ -23,6 +23,11 @@ exp(cbind(M_LOG$coefficients, confint(M_LOG)))
 confusionMatrix(table(predict(M_LOG, Valid, type="response") >= .5,
                       Valid$loan_status == 1), positive='TRUE')
 
+##If want to add predictions to validation df
+predictions<-predict(M_LOG, Valid, type="response")
+ValidView <- cbind(Valid, predictions)
+
+
 ##Loop through threshhold values and print out accuracy of each
 p = .1
 while (p < 1){
