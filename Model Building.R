@@ -39,13 +39,22 @@ exp(cbind(M_LOG$coefficients, confint(M_LOG2)))
 confusionMatrix(table(predict(M_LOG2, Valid, type="response") >= .1,
                       Valid$loan_status == 1), positive='TRUE')
 
+TruePos <- list()
+TrueNeg <- list()
 p = .1
 while (p < 1){
   cm2 <- confusionMatrix(table(predict(M_LOG2, Valid, type="response") >= p,
                               Valid$loan_status == 1), positive='TRUE')
-  byclass.minfalsepos <- cm2$byClass['Pos Pred Value']
-  print(byclass.minfalsepos)
+  byclass.minTruePos <- cm2$byClass['Sensitivity']
+  byclass.minFalsePos <- cm2$byClass['Neg Pred Value']
+  TruePos <- append(TruePos,byclass.minTruePos) 
+  TrueNeg <- append(TrueNeg,byclass.minFalsePos) 
+  print(byclass.minFalsePos)
   p <- p + .1
 }
+
+##Attempt at ROC plot
+plot(TrueNeg,TruePos, ylim = 0:1, xlim = 0:1)
+
 
 
