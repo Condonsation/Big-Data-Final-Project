@@ -56,7 +56,7 @@ while (p < 1){
 
 
 ##Second logistic Regression
-M_LOG2<-glm(loan_status ~. -cb_person_cred_hist_length -cb_person_default_on_file -person_age, data = Train, family = "binomial", na.action = na.omit)
+M_LOG2<-glm(loan_status ~. -loan_percent_income, data = Train, family = "binomial", na.action = na.omit)
 summary(M_LOG2)
 exp(cbind(M_LOG$coefficients, confint(M_LOG2)))
 confusionMatrix(table(predict(M_LOG2, Valid, type="response") >= .1,
