@@ -20,8 +20,24 @@ Valid <- credit_risk_df[-trainIndex,]
 M_LOG<-glm(loan_status ~., data = Train, family = "binomial", na.action = na.omit)
 summary(M_LOG)
 exp(cbind(M_LOG$coefficients, confint(M_LOG)))
+
+##out-sample summary statistics
 confusionMatrix(table(predict(M_LOG, Valid, type="response") >= .5,
                       Valid$loan_status == 1), positive='TRUE')
+
+##Model 1 in-sample summary statistics
+predictions<-predict(M_LOG, Train, type="response")
+
+#converts predictions to boolean TRUE (1) or FALSE (0) based on 1/2 threshold on output probability
+binpredict <- (predictions >= .5)
+View(binpredict)
+
+#build confusion matrix based on binary prediction in-sample
+confusion<-table(binpredict, Train$loan_status == 1)
+confusion
+
+#display summary analysis of confusion matrix in-sample
+confusionMatrix(confusion)
 
 ##If want to add predictions to validation df
 predictions<-predict(M_LOG, Valid, type="response")
@@ -62,6 +78,7 @@ while (p < 1){
 
 ##Attempt at ROC plot
 plot(TrueNeg,TruePos, ylim = 0:1, xlim = 0:1)
+
 
 
 
