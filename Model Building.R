@@ -1,10 +1,3 @@
-
-##Test linear regression with all vars. No split yet
-model.omit <- lm(person_income ~., data = credit_risk_df, na.action = na.omit)
-model.omit2 <- lm(log(person_income) ~person_age + cb_person_default_on_file + person_emp_length + loan_amnt + person_home_ownership + loan_status, data = credit_risk_df, na.action = na.omit)
-summary(model.omit2)
-model.omit3 <- lm(loan_int_rate ~loan_grade + loan_status + cb_person_default_on_file, data = credit_risk_df, na.action = na.omit)
-
 ##PARTITIONING with stratified random sampling##
 
 ##Creating training and testing data
@@ -15,6 +8,15 @@ trainIndex <- createDataPartition(credit_risk_df$loan_status, p = .7,
                                   times = 1)
 Train <- credit_risk_df[ trainIndex,]
 Valid <- credit_risk_df[-trainIndex,]
+
+##Test linear regression with all vars. No split yet
+TrainModel1 <- lm(log(person_income) ~. -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -loan_int_rate, data = Train, na.action = na.omit)
+summary(TrainModel1)
+ValidModel1 <- lm(log(person_income) ~. -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -loan_int_rate, data = Valid, na.action = na.omit)
+summary(TrainModel2)
+model.omit2 <- lm(log(person_income) ~person_age + cb_person_default_on_file + person_emp_length + loan_amnt + person_home_ownership + loan_status, data = credit_risk_df, na.action = na.omit)
+model.omit3 <- lm(loan_int_rate ~loan_grade + loan_status + cb_person_default_on_file, data = credit_risk_df, na.action = na.omit)
+
 
 ##First Logistic Regression with all variables
 M_LOG<-glm(loan_status ~., data = Train, family = "binomial", na.action = na.omit)
