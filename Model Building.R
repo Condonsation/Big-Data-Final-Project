@@ -9,17 +9,24 @@ trainIndex <- createDataPartition(credit_risk_df$loan_status, p = .7,
 Train <- credit_risk_df[ trainIndex,]
 Valid <- credit_risk_df[-trainIndex,]
 
+write.csv(Train, 'credit_risk_dataset(Training Set).csv', row.names = FALSE)
+write.csv(Valid, 'credit_risk_dataset(Testing Set).csv', row.names = FALSE)
+
 ##Test linear regression with all vars. No split yet
 TrainModel1 <- lm(log(person_income) ~. -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -loan_int_rate, data = Train, na.action = na.omit)
 summary(TrainModel1)
 ValidModel1 <- lm(log(person_income) ~. -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -loan_int_rate, data = Valid, na.action = na.omit)
+summary(ValidModel1)
+
+##Linear regression with age as ind. var
+TrainModel2 <- lm(scale(person_age) ~. -cb_person_default_on_file -person_income + log(person_income) -loan_percent_income -loan_amnt, data = Train, na.action = na.omit)
 summary(TrainModel2)
-model.omit2 <- lm(log(person_income) ~person_age + cb_person_default_on_file + person_emp_length + loan_amnt + person_home_ownership + loan_status, data = credit_risk_df, na.action = na.omit)
-model.omit3 <- lm(loan_int_rate ~loan_grade + loan_status + cb_person_default_on_file, data = credit_risk_df, na.action = na.omit)
+ValidModel2 <- lm(scale(person_age) ~. -cb_person_default_on_file, data = Valid, na.action = na.omit)
+summary(ValidModel2)
 
-
+####
 ##First Logistic Regression with all variables
-M_LOG<-glm(loan_status ~., data = Train, family = "binomial", na.action = na.omit)
+M_LOG<-glm(loan_status ~. -loan_percent_income -person_income -cb_person_default_on_file -cb_person_cred_hist_length -person_age +log(person_income), data = Train, family = "binomial", na.action = na.omit)
 summary(M_LOG)
 exp(cbind(M_LOG$coefficients, confint(M_LOG)))
 
