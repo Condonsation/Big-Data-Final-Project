@@ -1,6 +1,6 @@
 ##PARTITIONING with stratified random sampling##
 
-##Creating training and testing data
+##Creating training and testing data with imbalance
 library(caret) #data partioning library and other machine learning tools
 set.seed(1234)
 trainIndex <- createDataPartition(credit_risk_df$loan_status, p = .7,
@@ -19,10 +19,23 @@ ValidModel1 <- lm(log(person_income) ~. -cb_person_default_on_file -cb_person_cr
 summary(ValidModel1)
 
 ##Linear regression with age as ind. var
-TrainModel2 <- lm(scale(person_age) ~. -cb_person_default_on_file -person_income + log(person_income) -loan_percent_income -loan_amnt, data = Train, na.action = na.omit)
+TrainModel2 <- lm(person_age ~. -cb_person_default_on_file -person_income + log(person_income) -loan_percent_income -loan_amnt, data = Train, na.action = na.omit)
 summary(TrainModel2)
-ValidModel2 <- lm(scale(person_age) ~. -cb_person_default_on_file, data = Valid, na.action = na.omit)
+##RESIDUAL ANALYSIS##
+plot(TrainModel2$residuals)
+abline(0,0,col='black')
+hist(TrainModel2$residuals)
+summary(TrainModel2$residuals)
+sd(TrainModel2$residuals)
+
+ValidModel2 <- lm(person_age ~. -cb_person_default_on_file -person_income + log(person_income) -loan_percent_income -loan_amnt, data = Valid, na.action = na.omit)
 summary(ValidModel2)
+##RESIDUAL ANALYSIS##
+plot(ValidModel2$residuals)
+abline(0,0,col='black')
+hist(ValidModel2$residuals)
+summary(ValidModel2$residuals)
+sd(ValidModel2$residuals)
 
 ####
 ##First Logistic Regression with all variables
@@ -31,7 +44,7 @@ summary(M_LOG)
 exp(cbind(M_LOG$coefficients, confint(M_LOG)))
 
 ##out-sample summary statistics
-confusionMatrix(table(predict(M_LOG, Valid, type="response") >= .5,
+confusionMatrix(table(predict(M_LOG, Valid, type="response") >= .4,
                       Valid$loan_status == 1), positive='TRUE')
 
 ##Model 1 in-sample summary statistics
@@ -58,8 +71,8 @@ p = .1
 while (p < 1){
   cm <- confusionMatrix(table(predict(M_LOG, Valid, type="response") >= p,
                               Valid$loan_status == 1), positive='TRUE')
-  overall.accuracy <- cm$overall['Accuracy']
-  print(overall.accuracy)
+  overall.Neg_Pred_Value <- cm$byClass['Neg Pred Value']
+  print(overall.Neg_Pred_Value)
   p <- p + .1
 }
 
