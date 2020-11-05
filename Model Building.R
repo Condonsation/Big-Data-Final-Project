@@ -12,6 +12,18 @@ Valid <- credit_risk_df[-trainIndex,]
 write.csv(Train, 'credit_risk_dataset(Training Set).csv', row.names = FALSE)
 write.csv(Valid, 'credit_risk_dataset(Testing Set).csv', row.names = FALSE)
 
+##Creating training and testing data with BALANCED loan_status var
+fiftydf <- sample_n(subset(credit_risk_df, loan_status == 0), 7108)##DIPLR function
+fiftydf2 <- rbind(subset(credit_risk_df, loan_status == 1), fiftydf)
+
+set.seed(1234)
+trainIndex2 <- createDataPartition(fiftydf2$loan_status, p = .7,
+                                  list = FALSE,
+                                  times = 1)
+Train2 <- fiftydf2[ trainIndex2,]
+Valid2 <- fiftydf2[-trainIndex2,]
+
+
 ##Test linear regression with all vars. No split yet
 TrainModel1 <- lm(log(person_income) ~. -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -loan_int_rate, data = Train, na.action = na.omit)
 summary(TrainModel1)
@@ -36,16 +48,18 @@ abline(0,0,col='black')
 hist(ValidModel2$residuals)
 summary(ValidModel2$residuals)
 sd(ValidModel2$residuals)
+##RMSE in one line. Same value from
+sqrt(mean(ValidModel2$residuals^2))
 
 ####
-##First Logistic Regression with all variables
-M_LOG<-glm(loan_status ~. -loan_percent_income -person_income -cb_person_default_on_file -cb_person_cred_hist_length -person_age +log(person_income), data = Train, family = "binomial", na.action = na.omit)
+##First Logistic Regression
+M_LOG<-glm(loan_status ~. -loan_percent_income -person_income -cb_person_default_on_file -cb_person_cred_hist_length -person_age , data = Train2, family = "binomial", na.action = na.omit)
 summary(M_LOG)
 exp(cbind(M_LOG$coefficients, confint(M_LOG)))
 
 ##out-sample summary statistics
-confusionMatrix(table(predict(M_LOG, Valid, type="response") >= .4,
-                      Valid$loan_status == 1), positive='TRUE')
+confusionMatrix(table(predict(M_LOG, Valid2, type="response") >= .5,
+                      Valid2$loan_status == 1), positive='TRUE')
 
 ##Model 1 in-sample summary statistics
 predictions<-predict(M_LOG, Train, type="response")
