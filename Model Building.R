@@ -113,8 +113,8 @@ while (p < 1){
 M_LOG2<-glm(loan_status ~. -loan_percent_income, data = Train, family = "binomial", na.action = na.omit)
 summary(M_LOG2)
 exp(cbind(M_LOG2$coefficients, confint(M_LOG2)))
-confusionMatrix(table(predict(M_LOG2, Train, type="response") >= .4,
-                      Train$loan_status == 1), positive='TRUE')
+confusionMatrix(table(predict(M_LOG2, Valid, type="response") >= .4,
+                      Valid$loan_status == 1), positive='TRUE')
 
 SensitivityTruePos <- list()
 OneMinusSpecificityFalsePositive <- list()
@@ -142,10 +142,26 @@ plot(OneMinusSpecificityFalsePositive,SensitivityTruePos)
 ########CART#########
 #####################
 
-#rpart package implementation
+#rpart package implementation **Not working**
 train_control <- trainControl(method="cv", number=10, savePredictions = TRUE)
 M_CART <- train(loan_status ~., data = Train, trControl=train_control, tuneLength=10, method = "rpart", na.action = na.omit) #increasing tunelength increases regularization penalty
 ##the "cv", number = 10 refers to 10-fold cross validation on the training data
 plot(M_CART) #produces plot of cross-validation results
 M_CART$bestTune #returns optimal complexity parameter
 confusionMatrix(predict(M_CART, Valid), Valid$loan_status, positive='1')
+
+##WORKING CART##
+##Test on Train and Valid
+library(rpart)
+modelcart <- rpart(loan_status ~., data = Train)
+par(xpd = NA) # otherwise on some devices the text is clipped
+plot(modelcart)
+text(modelcart, digits = 3)
+confusionMatrix(modelcart %>% predict(Valid, "class"), Valid$loan_status, positive='1')
+
+##Test on Train2 and Valid2
+modelcart2 <- rpart(loan_status ~., data = Train2)
+par(xpd = NA) # otherwise on some devices the text is clipped
+plot(modelcart2)
+text(modelcart2, digits = 3)
+confusionMatrix(modelcart2 %>% predict(Valid2, "class"), Valid2$loan_status, positive='1')
