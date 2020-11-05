@@ -38,7 +38,7 @@ summary(ValidModel1)
 car::vif(ValidModel1)
 
 ##Linear regression with age as ind. var
-TrainModel2 <- lm(person_age ~.-cb_person_default_on_file -loan_percent_income +log(person_income) -person_income -loan_amnt, data = Train, na.action = na.omit)
+TrainModel2 <- lm(person_age ~.-cb_person_default_on_file -person_income, data = Train, na.action = na.omit)
 summary(TrainModel2)
 ##RESIDUAL ANALYSIS##
 par(mfrow=c(2,2))
@@ -52,9 +52,10 @@ summary(TrainModel2$residuals)
 sd(TrainModel2$residuals)
 
 ##Test against Valid set
-ValidModel2 <- lm(person_age ~.-cb_person_default_on_file -loan_percent_income +log(person_income) -person_income -loan_amnt, data = Valid, na.action = na.omit)
+ValidModel2 <- lm(person_age ~.-cb_person_default_on_file -person_income, data = Valid, na.action = na.omit)
 summary(ValidModel2)
 plot(ValidModel2$residuals)
+hist(ValidModel2$residuals)
 ##View predictions against actual
 predictions <- TrainModel2 %>% predict(Valid)
 View(cbind(Valid$person_age,predictions))
@@ -110,10 +111,10 @@ while (p < 1){
 
 
 ##Second logistic Regression
-M_LOG2<-glm(loan_status ~. -loan_percent_income, data = Train, family = "binomial", na.action = na.omit)
+M_LOG2<-glm(loan_status ~. -person_income -cb_person_default_on_file -cb_person_cred_hist_length -person_age, data = Train, family = "binomial", na.action = na.omit)
 summary(M_LOG2)
 exp(cbind(M_LOG2$coefficients, confint(M_LOG2)))
-confusionMatrix(table(predict(M_LOG2, Valid, type="response") >= .4,
+confusionMatrix(table(predict(M_LOG2, Valid, type="response") >= .36,
                       Valid$loan_status == 1), positive='TRUE')
 
 SensitivityTruePos <- list()
