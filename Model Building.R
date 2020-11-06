@@ -7,10 +7,17 @@ trainIndex <- createDataPartition(credit_risk_df$loan_status, p = .7,
                                   list = FALSE,
                                   times = 1)
 Train <- credit_risk_df[ trainIndex,]
-Valid <- credit_risk_df[-trainIndex,]
+TestValid <- credit_risk_df[-trainIndex,]
+set.seed(1234)
+trainIndex2 <- createDataPartition(TestValid$loan_status, p = .5,
+                                  list = FALSE,
+                                  times = 1)
+Test <- TestValid[ trainIndex2,]
+Valid <- TestValid[-trainIndex2,]
 
 write.csv(Train, 'credit_risk_dataset(Training Set).csv', row.names = FALSE)
-write.csv(Valid, 'credit_risk_dataset(Testing Set).csv', row.names = FALSE)
+write.csv(Test, 'credit_risk_dataset(Testing Set).csv', row.names = FALSE)
+write.csv(Valid, 'credit_risk_dataset(Validating Set).csv', row.names = FALSE)
 
 hist(na.omit(log(credit_risk_df$loan_amnt)))
 plot(density(log(credit_risk_df$loan_amnt))) 
