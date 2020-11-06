@@ -38,7 +38,7 @@ summary(ValidModel1)
 car::vif(ValidModel1)
 
 ##Linear regression with age as ind. var
-TrainModel2 <- lm(person_age ~.-cb_person_default_on_file -person_income, data = Train, na.action = na.omit)
+TrainModel2 <- lm(person_age ~.-cb_person_default_on_file -person_income -loan_int_rate -loan_grade -loan_status, data = Train, na.action = na.omit)
 summary(TrainModel2)
 ##RESIDUAL ANALYSIS##
 par(mfrow=c(2,2))
@@ -52,7 +52,7 @@ summary(TrainModel2$residuals)
 sd(TrainModel2$residuals)
 
 ##Test against Valid set
-ValidModel2 <- lm(person_age ~.-cb_person_default_on_file -person_income, data = Valid, na.action = na.omit)
+ValidModel2 <- lm(person_age ~.-cb_person_default_on_file -person_income -loan_int_rate -loan_grade -loan_status, data = Valid, na.action = na.omit)
 summary(ValidModel2)
 plot(ValidModel2$residuals)
 hist(ValidModel2$residuals)
