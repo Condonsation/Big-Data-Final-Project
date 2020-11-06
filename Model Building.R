@@ -12,6 +12,9 @@ Valid <- credit_risk_df[-trainIndex,]
 write.csv(Train, 'credit_risk_dataset(Training Set).csv', row.names = FALSE)
 write.csv(Valid, 'credit_risk_dataset(Testing Set).csv', row.names = FALSE)
 
+hist(na.omit(log(credit_risk_df$loan_amnt)))
+plot(density(log(credit_risk_df$loan_amnt))) 
+
 ##Creating training and testing data with BALANCED loan_status var
 fiftydf <- sample_n(subset(credit_risk_df, loan_status == 0), 7108)##DIPLR function
 fiftydf2 <- rbind(subset(credit_risk_df, loan_status == 1), fiftydf)
@@ -23,6 +26,25 @@ trainIndex2 <- createDataPartition(fiftydf2$loan_status, p = .7,
 Train2 <- fiftydf2[ trainIndex2,]
 Valid2 <- fiftydf2[-trainIndex2,]
 
+##Linear regression done as a group
+TrainModel3 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate, data = Train, na.action = na.omit)
+summary(TrainModel3)
+car::vif(TrainModel3)
+plot(TrainModel3$residuals)
+abline(0,0,col='black')
+hist(TrainModel3$residuals)
+summary(TrainModel3$residuals)
+sd(TrainModel3$residuals)
+
+ValidModel3 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate, data = Valid, na.action = na.omit)
+summary(ValidModel3)
+car::vif(TrainModel3)
+plot(TrainModel3$residuals)
+abline(0,0,col='black')
+hist(TrainModel3$residuals)
+summary(TrainModel3$residuals)
+sd(TrainModel3$residuals)
+##RUN Jaques-Beras
 
 ##Test linear regression with all vars. No split yet
 TrainModel1 <- lm(log(person_income) ~. -cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate, data = Train, na.action = na.omit)
@@ -123,8 +145,8 @@ p = .1
 while (p < 1){
   cm2 <- confusionMatrix(table(predict(M_LOG2, Valid, type="response") >= p,
                               Valid$loan_status == 1), positive='TRUE')
-  byclass.minTruePos <- cm2$byClass['Sensitivity']
-  byclass.minFalsePos <- (1 - cm2$byClass['Specificity'])
+  byclass.minTruePos <- cm2$byClass['Neg Pred Value']
+  byclass.minFalsePos <- (cm2$byClass['Pos Pred Value'])
   SensitivityTruePos <- append(SensitivityTruePos,byclass.minTruePos) 
   OneMinusSpecificityFalsePositive <- append(OneMinusSpecificityFalsePositive,byclass.minFalsePos) 
   print(byclass.minTruePos)
