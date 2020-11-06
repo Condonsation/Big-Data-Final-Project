@@ -42,8 +42,10 @@ abline(0,0,col='black')
 hist(TrainModel3$residuals)
 summary(TrainModel3$residuals)
 sd(TrainModel3$residuals)
+library(tseries)
+jarque.bera.test(TrainModel3$residuals) #null hypothesis: data is distribution is normal
 
-ValidModel3 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate, data = Valid, na.action = na.omit)
+TestModel3 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate, data = Valid, na.action = na.omit)
 summary(ValidModel3)
 car::vif(TrainModel3)
 plot(TrainModel3$residuals)
@@ -51,7 +53,7 @@ abline(0,0,col='black')
 hist(TrainModel3$residuals)
 summary(TrainModel3$residuals)
 sd(TrainModel3$residuals)
-##RUN Jaques-Beras
+jarque.bera.test(TestModel3$residuals)
 
 ##Test linear regression with all vars. No split yet
 TrainModel1 <- lm(log(person_income) ~. -cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate, data = Train, na.action = na.omit)
