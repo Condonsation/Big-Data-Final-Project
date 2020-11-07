@@ -4,6 +4,7 @@ library(dplyr)
 
 credit_risk_df <- read_csv("credit_risk_dataset (For Cleaning).csv")
 View(credit_risk_dataset_For_Cleaning_)
+credit_risk_dataset_Original <- read_csv("credit_risk_dataset (Original).csv")
 
 ##Take a look at data
 summary(credit_risk_df)
@@ -13,6 +14,9 @@ credit_risk_df$loan_grade <- as.factor(credit_risk_df$loan_grade)
 credit_risk_df$cb_person_default_on_file <- as.factor(credit_risk_df$cb_person_default_on_file)
 credit_risk_df$loan_status <- as.factor(credit_risk_df$loan_status)
 
+##Add log(person_income) column
+credit_risk_df$log_person_income <- log(credit_risk_df$person_income)
+
 glimpse(credit_risk_df)
 
 # NOTES on Summary stats:
@@ -21,6 +25,7 @@ glimpse(credit_risk_df)
 # loan_int_rate: NAs = 3116
 # Default Rate: 7108/(7108+25473) = 0.218164
 # Total % NAs: (895 + 3116) / (32,581 * 12) = 0.01025905
+# Income variable should be normalized 
 
 #######################################
 ###METHOD 2: Deletion when necessary###
@@ -32,6 +37,12 @@ plot(credit_risk_df$person_age, credit_risk_df$person_emp_length)
 credit_risk_df$person_emp_length[credit_risk_df$person_emp_length > 120]<-NA ##Make 2 obs > 120 years equal to NA
 write.csv(credit_risk_df, 'credit_risk_dataset (Cleaned).csv', row.names = FALSE) ##Save cleaned file as CSV
 
+##Create visulizations of outliers
+ggplot(credit_risk_dataset_Original, aes(person_age, person_emp_length), size =5) + 
+  geom_point() + xlab("Age") + ylab("Employement Length") + theme(
+    axis.title.x = element_text(size = 16),
+    axis.text.x = element_text(size = 14),
+    axis.title.y = element_text(size = 16))
 
 ##Create visulizations of relationships
 plot(credit_risk_df$person_age, log(credit_risk_df$person_income))
@@ -39,6 +50,15 @@ hist(log(credit_risk_df$person_income))
 
 ggplot(credit_risk_df, aes(person_age, loan_amnt ,color = loan_status)) + 
   geom_point()
+
+ggplot(credit_risk_df, aes(loan_percent_income, person_age ,color = loan_status)) + 
+  geom_point()
+
+ggplot(credit_risk_df, aes(loan_amnt, log(person_income) ,color = loan_status)) + 
+  geom_point() + xlab("Loan Amount") + ylab("Income (logged)") + theme(
+    axis.title.x = element_text(size = 16),
+    axis.text.x = element_text(size = 14),
+    axis.title.y = element_text(size = 16))
 
 ggplot(credit_risk_df, aes(cb_person_cred_hist_length, person_age ,color = loan_status)) + 
   geom_point(size =2)
@@ -49,11 +69,14 @@ ggplot(credit_risk_df, aes(loan_percent_income, loan_amnt ,color = loan_status))
 ggplot(credit_risk_df, aes(loan_int_rate, cb_person_default_on_file ,color = loan_status)) + 
   geom_point(size =2)
 
-ggplot(credit_risk_df, aes(person_age, loan_int_rate, color = loan_status)) + 
+ggplot(credit_risk_df, aes(log(person_income), loan_int_rate, color = loan_grade)) + 
   geom_point() ##Higher interest rates default more
 
 ggplot(credit_risk_df, aes(person_age, loan_int_rate, color = loan_grade)) + 
-  geom_point() ##High correlation between int. rate and loan grade and default 
+  geom_point() + xlab("Income (logged)") + ylab("Interest Rate") + theme(
+    axis.title.x = element_text(size = 16),
+    axis.text.x = element_text(size = 14),
+    axis.title.y = element_text(size = 16))##High correlation between int. rate and loan grade and default 
 
 ggplot(credit_risk_df, aes(loan_int_rate, cb_person_default_on_file, color = loan_status)) + 
   geom_point() ##High correlation between int. rate and loan grade

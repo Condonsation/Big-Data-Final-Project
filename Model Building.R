@@ -34,7 +34,7 @@ Train2 <- fiftydf2[ trainIndex2,]
 Valid2 <- fiftydf2[-trainIndex2,]
 
 ##Linear regression done as a group
-TrainModel3 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate, data = Train, na.action = na.omit)
+TrainModel3 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = Train, na.action = na.omit)
 summary(TrainModel3)
 car::vif(TrainModel3)
 plot(TrainModel3$residuals)
@@ -45,8 +45,17 @@ sd(TrainModel3$residuals)
 library(tseries)
 jarque.bera.test(TrainModel3$residuals) #null hypothesis: data is distribution is normal
 
-TestModel3 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate, data = Valid, na.action = na.omit)
-summary(ValidModel3)
+TestModel1 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = subset(Test, person_home_ownership != "OTHER"), na.action = na.omit)
+summary(TestModel1)
+
+TestModel2 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = subset(Test, loan_grade != "C"), na.action = na.omit)
+summary(TestModel2)##BEST MODEL FOR OUT-SAMPLE RMSE
+
+TestModel4 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = Test, na.action = na.omit)
+summary(TestModel4)
+
+TestModel3 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = subset(Test, loan_grade != "C" & person_home_ownership != "OTHER"), na.action = na.omit)
+summary(TestModel3)
 car::vif(TrainModel3)
 plot(TrainModel3$residuals)
 abline(0,0,col='black')
