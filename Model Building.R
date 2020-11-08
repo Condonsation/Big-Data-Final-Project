@@ -214,6 +214,13 @@ plot(modelcart)
 text(modelcart, digits = 3)
 confusionMatrix(modelcart %>% predict(Train, "class"), Train$loan_status, positive='1')
 
+##Better graph of CART
+library(rpart)
+install.packages("RColorBrewer")
+library(rpart.plot)
+rpart.plot(modelcart, space = 0, tweak = 2)
+
+
 ##Test on Train2 and Valid2
 modelcart2 <- rpart(loan_status ~., data = Train2)
 par(xpd = NA) # otherwise on some devices the text is clipped
