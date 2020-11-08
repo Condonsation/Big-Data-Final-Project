@@ -1,6 +1,6 @@
 ##PARTITIONING with stratified random sampling##
 
-##Creating training and testing data with imbalance
+##Creating training and testing data with imbalance. 70/15/15 split
 library(caret) #data partioning library and other machine learning tools
 set.seed(1234)
 trainIndex <- createDataPartition(credit_risk_df$loan_status, p = .7,
@@ -19,10 +19,8 @@ write.csv(Train, 'credit_risk_dataset(Training Set).csv', row.names = FALSE)
 write.csv(Test, 'credit_risk_dataset(Testing Set).csv', row.names = FALSE)
 write.csv(Valid, 'credit_risk_dataset(Validating Set).csv', row.names = FALSE)
 
-hist(na.omit(log(credit_risk_df$loan_amnt)))
-plot(density(log(credit_risk_df$loan_amnt))) 
 
-##Creating training and testing data with BALANCED loan_status var
+##Creating training and testing data with BALANCED loan_status var for later testing if necessary
 fiftydf <- sample_n(subset(credit_risk_df, loan_status == 0), 7108)##DIPLR function
 fiftydf2 <- rbind(subset(credit_risk_df, loan_status == 1), fiftydf)
 
@@ -33,126 +31,92 @@ trainIndex2 <- createDataPartition(fiftydf2$loan_status, p = .7,
 Train2 <- fiftydf2[ trainIndex2,]
 Valid2 <- fiftydf2[-trainIndex2,]
 
-##Linear regression done as a group
+##Linear regression modeling
 ##Steps:
-# Try all
-# Remove cb_person_cred_hist_length
-# Remove cb_person_default_on_file
 # Remove loan_percent_income
 # Remove loan_int_rate
-# Remove log_person_income
+# Run
+# Remove cb_person_cred_hist_length
+# Run
+# Remove cb_person_default_on_file
+# Run
 # subset data to remove C level from loan grade
+# Run
 # Subset data to remove Other from person_home_ownership
-TrainModel3 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = Train, na.action = na.omit)
-summary(TrainModel3)
-car::vif(TrainModel3)
-plot(TrainModel3$residuals)
-abline(0,0,col='black')
-hist(TrainModel3$residuals)
-summary(TrainModel3$residuals)
-sd(TrainModel3$residuals)
-library(tseries)
-jarque.bera.test(TrainModel3$residuals) #null hypothesis: data is distribution is normal
 
-set.seed(123)
-TestModel1 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = subset(Test, person_home_ownership != "OTHER"), na.action = na.omit)
+# first OLS model creation
+TrainModel1 <- lm(log(person_income) ~.-loan_percent_income -log_person_income, data = Train, na.action = na.omit)
+summary(TrainModel1)
+# VIF check for multicollinearity
+car::vif(TrainModel1) ##loan_grade and loan_int_rate > 10
+plot(TrainModel1$residuals)
+abline(0,0,col='black')
+hist(TrainModel1$residuals)
+summary(TrainModel1$residuals)
+## Run with Test set
+TestModel1 <- lm(log(person_income) ~.-loan_percent_income -log_person_income, data = Test, na.action = na.omit)
 summary(TestModel1)
 
-TestModel2 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = subset(Test, loan_grade != "C"), na.action = na.omit)
-summary(TestModel2)##BEST MODEL FOR OUT-SAMPLE RSE
+# Test if residuals are normally distributed using jaques-Bera test
+library(tseries)
+jarque.bera.test(TrainModel1$residuals) #null hypothesis: data is distribution is normal. Reject Null
 
-TestModel4 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = Test, na.action = na.omit)
-summary(TestModel4)
-
-TestModel3 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = subset(Test, loan_grade != "C" & person_home_ownership != "OTHER"), na.action = na.omit)
-summary(TestModel3)
-car::vif(TrainModel3)
-plot(TrainModel3$residuals)
-abline(0,0,col='black')
-hist(TrainModel3$residuals)
-summary(TrainModel3$residuals)
-sd(TrainModel3$residuals)
-jarque.bera.test(TestModel3$residuals)
-
-##Test linear regression with all vars. No split yet
-TrainModel1 <- lm(log(person_income) ~. -cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate, data = Train, na.action = na.omit)
-summary(TrainModel1)
-par(mfrow=c(2,2))
-plot(TrainModel1)
-# Test for Multicollinearity 
-car::vif(TrainModel1)
-
-##Test against Valid set
-ValidModel1 <- TrainModel1 <- lm(log(person_income) ~. -cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate, data = Valid, na.action = na.omit)
-summary(ValidModel1)
-car::vif(ValidModel1)
-
-##Linear regression with age as ind. var
-TrainModel2 <- lm(person_age ~.-cb_person_default_on_file -person_income -loan_int_rate -loan_grade -loan_status, data = Train, na.action = na.omit)
+# second OLS model
+TrainModel2 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Train, person_home_ownership != "OTHER"), na.action = na.omit)
 summary(TrainModel2)
-##RESIDUAL ANALYSIS##
-par(mfrow=c(2,2))
-plot(TrainModel2)
-car::vif(TrainModel2)
-
+# VIF check for multicollinearity
+car::vif(TrainModel2) ##all under 10
+# Check residuals
 plot(TrainModel2$residuals)
 abline(0,0,col='black')
 hist(TrainModel2$residuals)
 summary(TrainModel2$residuals)
-sd(TrainModel2$residuals)
+## Run with Test set
+TestModel2 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Test, person_home_ownership != "OTHER"), na.action = na.omit)
+summary(TestModel2)
 
-##Test against Valid set
-ValidModel2 <- lm(person_age ~.-cb_person_default_on_file -person_income -loan_int_rate -loan_grade -loan_status, data = Valid, na.action = na.omit)
-summary(ValidModel2)
-plot(ValidModel2$residuals)
-hist(ValidModel2$residuals)
-##View predictions against actual
-predictions <- TrainModel2 %>% predict(Valid)
-View(cbind(Valid$person_age,predictions))
-
-
-##RESIDUAL ANALYSIS##
-plot(ValidModel2$residuals)
+# third OLS model
+TrainModel3 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Train, loan_grade != "C"), na.action = na.omit)
+summary(TrainModel3)
+# VIF check for multicollinearity
+car::vif(TrainModel3) ##all under 10
+# Check residuals
+plot(TrainModel3$residuals)
 abline(0,0,col='black')
-hist(ValidModel2$residuals)
-summary(ValidModel2$residuals)
-sd(ValidModel2$residuals)
-##RMSE in one line. Same value from
-sqrt(mean(ValidModel2$residuals^2))
+hist(TrainModel3$residuals)
+summary(TrainModel3$residuals)
+## Run with Test set
+TestModel3 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Test, loan_grade != "C"), na.action = na.omit)
+summary(TestModel3)
 
-####
+# fourth OLS model
+TrainModel4 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Train, loan_grade != "C" & person_home_ownership != "OTHER"), na.action = na.omit)
+summary(TrainModel4)
+# VIF check for multicollinearity
+car::vif(TrainModel4) ##all under 10
+# Check residuals
+plot(TrainModel4$residuals)
+abline(0,0,col='black')
+hist(TrainModel4$residuals)
+summary(TrainModel4$residuals)
+
+# Test if residuals are normally distributed using jaques-Bera test
+library(tseries)
+jarque.bera.test(TrainModel4$residuals) #null hypothesis: data is distribution is normal
+par(mfrow=c(2,2)) # init 4 charts in 1 panel
+plot(TrainModel4) ## Check to heteroskedasticity 
+## Run with Test set
+TestModel4 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Test, loan_grade != "C" & person_home_ownership != "OTHER"), na.action = na.omit)
+summary(TestModel4)
+
+##RMSE in one line. Same value from
+sqrt(mean(TestModel4$residuals^2))
+
+####Classification task
 ##First Logistic Regression
 M_LOG<-glm(loan_status ~.-person_income -cb_person_cred_hist_length -cb_person_default_on_file -person_age -loan_amnt, data = Train, family = "binomial", na.action = na.omit)
 summary(M_LOG)
 exp(cbind(M_LOG$coefficients, confint(M_LOG)))
-
-##in-sample summary statistics
-confusionMatrix(table(predict(M_LOG, Test, type="response") >= .5,
-                      Test$loan_status == 1), positive='TRUE')
-
-##out-sample summary statistics for M_LOG
-confusionMatrix(table(predict(M_LOG, Test, type="response") >= .4,
-                      Test$loan_status == 1), positive='TRUE')
-
-##Model 1 in-sample summary statistics
-predictions<-predict(M_LOG, Train, type="response")
-
-#converts predictions to boolean TRUE (1) or FALSE (0) based on 1/2 threshold on output probability
-binpredict <- (predictions >= .5)
-View(binpredict)
-
-#build confusion matrix based on binary prediction in-sample
-confusion<-table(binpredict, Train$loan_status == 1)
-confusion
-
-#display summary analysis of confusion matrix in-sample
-confusionMatrix(confusion)
-
-##If want to add predictions to validation df
-predictions<-predict(M_LOG, Valid, type="response")
-ValidView <- cbind(Valid, predictions)
-
-
 ##Loop through threshhold values and print out accuracy of each
 p = .1
 while (p < 1){
@@ -162,48 +126,34 @@ while (p < 1){
   print(overall.accuracy)
   p <- p + .1
 }
+## p = .5 has the highest accuarcy
 
+##in-sample summary statistics
+confusionMatrix(table(predict(M_LOG, Train, type="response") >= .5,
+                      Train$loan_status == 1), positive='TRUE')
 
-##Second logistic Regression
-M_LOG2<-glm(loan_status ~. -person_income -cb_person_default_on_file -cb_person_cred_hist_length -person_age, data = Train, family = "binomial", na.action = na.omit)
-summary(M_LOG2)
-exp(cbind(M_LOG2$coefficients, confint(M_LOG2)))
-confusionMatrix(table(predict(M_LOG2, Valid, type="response") >= .36,
-                      Valid$loan_status == 1), positive='TRUE')
+##out-sample summary statistics for M_LOG
+confusionMatrix(table(predict(M_LOG, Test, type="response") >= .5,
+                      Test$loan_status == 1), positive='TRUE')
 
-SensitivityTruePos <- list()
-OneMinusSpecificityFalsePositive <- list()
-p = .1
-while (p < 1){
-  cm2 <- confusionMatrix(table(predict(M_LOG2, Valid, type="response") >= p,
-                              Valid$loan_status == 1), positive='TRUE')
-  byclass.minTruePos <- cm2$byClass['Neg Pred Value']
-  byclass.minFalsePos <- (cm2$byClass['Pos Pred Value'])
-  SensitivityTruePos <- append(SensitivityTruePos,byclass.minTruePos) 
-  OneMinusSpecificityFalsePositive <- append(OneMinusSpecificityFalsePositive,byclass.minFalsePos) 
-  print(byclass.minTruePos)
-  print(byclass.minFalsePos)
-  p <- p + .1
-}
-##p = .3 has Sensitivity of 0.7049892 and 1-Specificity of 0.1297857 
+## Second logistic regression model
+CR_LOG1 <- glm(loan_status ~ ., data = Train, family = "binomial")
+summary(CR_LOG1)
 
+#in sample error#
+caret::confusionMatrix(table(predict(CR_LOG1, Train, type="response") >= .5,
+                             Train$loan_status == 1), positive='TRUE')
+#out of sample error#
+caret::confusionMatrix(table(predict(CR_LOG1, Test, type="response") >= 0.5,
+                             Test$loan_status == 1), positive = 'TRUE')
 ##Attempt at ROC plot
-plot(OneMinusSpecificityFalsePositive,SensitivityTruePos)
+# plot(OneMinusSpecificityFalsePositive,SensitivityTruePos)
 
-
-##Addition models: CART, Random Forest, SVM
+##Addition models: CART and SVM
 
 #####################
 ########CART#########
 #####################
-
-#rpart package implementation **Not working**
-train_control <- trainControl(method="cv", number=10, savePredictions = TRUE)
-M_CART <- train(loan_status ~., data = Train, trControl=train_control, tuneLength=10, method = "rpart", na.action = na.omit) #increasing tunelength increases regularization penalty
-##the "cv", number = 10 refers to 10-fold cross validation on the training data
-plot(M_CART) #produces plot of cross-validation results
-M_CART$bestTune #returns optimal complexity parameter
-confusionMatrix(predict(M_CART, Test), Test$loan_status, positive='1')
 
 ##WORKING CART##
 ##Test on Train and Valid
@@ -212,7 +162,10 @@ modelcart <- rpart(loan_status ~., data = Train)
 par(xpd = NA) # otherwise on some devices the text is clipped
 plot(modelcart)
 text(modelcart, digits = 3)
+##in-sample output table
 confusionMatrix(modelcart %>% predict(Train, "class"), Train$loan_status, positive='1')
+##out-sample output table
+confusionMatrix(modelcart %>% predict(Test, "class"), Test$loan_status, positive='1')
 
 ##Better graph of CART
 library(rpart)
@@ -220,24 +173,14 @@ install.packages("RColorBrewer")
 library(rpart.plot)
 rpart.plot(modelcart, space = 0, tweak = 2)
 
-
-##Test on Train2 and Valid2
-modelcart2 <- rpart(loan_status ~., data = Train2)
-par(xpd = NA) # otherwise on some devices the text is clipped
-plot(modelcart2)
-text(modelcart2, digits = 3)
-confusionMatrix(modelcart2 %>% predict(Valid2, "class"), Valid2$loan_status, positive='1')
-
-
 # SVM code chunk from Dan:
-
 library(e1071)
-set.seed(1234)
-
 Train$loan_status<-factor(Train$loan_status)
 Test$loan_status<-factor(Test$loan_status)
 TestnoNA<-na.omit(Test)
 TrainnoNA<-na.omit(Train)
-set.seed(1234)
 SVM0<-svm(loan_status~., data = Train)
+##in-sample output table
 confusionMatrix(predict(SVM0, TrainnoNA), TrainnoNA$loan_status, positive= '1')
+##out-sample output table
+confusionMatrix(predict(SVM0, TestnoNA), TestnoNA$loan_status, positive= '1')

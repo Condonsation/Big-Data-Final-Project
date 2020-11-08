@@ -2,9 +2,9 @@ library(readr)
 library(ggplot2)
 library(dplyr)
 
-credit_risk_df <- read_csv("credit_risk_dataset (For Cleaning).csv")
+credit_risk_df <- read_csv("credit_risk_dataset (For Cleaning).csv") ##df to be cleaned
 View(credit_risk_dataset_For_Cleaning_)
-credit_risk_dataset_Original <- read_csv("credit_risk_dataset (Original).csv")
+credit_risk_dataset_Original <- read_csv("credit_risk_dataset (Original).csv") ##original df for plotting outliers
 
 ##Take a look at data
 summary(credit_risk_df)
@@ -14,9 +14,10 @@ credit_risk_df$loan_grade <- as.factor(credit_risk_df$loan_grade)
 credit_risk_df$cb_person_default_on_file <- as.factor(credit_risk_df$cb_person_default_on_file)
 credit_risk_df$loan_status <- as.factor(credit_risk_df$loan_status)
 
-##Add log(person_income) column
+##Add log(person_income) column to help normalize
 credit_risk_df$log_person_income <- log(credit_risk_df$person_income)
 
+##take a look at df
 glimpse(credit_risk_df)
 
 # NOTES on Summary stats:
@@ -30,7 +31,7 @@ glimpse(credit_risk_df)
 #######################################
 ###METHOD 2: Deletion when necessary###
 #######################################
-plot(credit_risk_df$person_age, credit_risk_df$person_income) 
+plot(credit_risk_df$person_age, credit_risk_df$person_income) ##plot shows unrealiztic outliers
 View(subset(credit_risk_df, person_age > 120)) ##Five people over 120
 credit_risk_df$person_age[credit_risk_df$person_age > 120]<-NA ##Make 5 obs > 120 years equal to NA
 plot(credit_risk_df$person_age, credit_risk_df$person_emp_length) 
@@ -38,8 +39,8 @@ credit_risk_df$person_emp_length[credit_risk_df$person_emp_length > 120]<-NA ##M
 write.csv(credit_risk_df, 'credit_risk_dataset (Cleaned).csv', row.names = FALSE) ##Save cleaned file as CSV
 
 ##Create visulizations of outliers
-ggplot(credit_risk_dataset_Original, aes(person_age, person_emp_length), size =5) + 
-  geom_point() + xlab("Age") + ylab("Employement Length") + theme(
+ggplot(credit_risk_dataset_Original, aes(person_age, person_emp_length)) + 
+  geom_point(size=3) + xlab("Age") + ylab("Employement Length") + theme(
     axis.title.x = element_text(size = 16),
     axis.text.x = element_text(size = 14),
     axis.title.y = element_text(size = 16))
@@ -64,7 +65,7 @@ ggplot(credit_risk_df, aes(cb_person_cred_hist_length, person_age ,color = loan_
   geom_point(size =2)
 
 ggplot(credit_risk_df, aes(loan_percent_income, loan_amnt ,color = loan_status)) + 
-  geom_point(size =2) ##VERY obvious correlation
+  geom_point(size =2) ##Potential Multicollinearity issue
 
 ggplot(credit_risk_df, aes(loan_int_rate, cb_person_default_on_file ,color = loan_status)) + 
   geom_point(size =2)
@@ -73,10 +74,16 @@ ggplot(credit_risk_df, aes(log(person_income), loan_int_rate, color = loan_grade
   geom_point() ##Higher interest rates default more
 
 ggplot(credit_risk_df, aes(person_age, loan_int_rate, color = loan_grade)) + 
-  geom_point() + xlab("Income (logged)") + ylab("Interest Rate") + theme(
+  geom_point(size=2.5) + xlab("Income (logged)") + ylab("Interest Rate") + theme(
     axis.title.x = element_text(size = 16),
     axis.text.x = element_text(size = 14),
     axis.title.y = element_text(size = 16))##High correlation between int. rate and loan grade and default 
+
+ggplot(credit_risk_df, aes(loan_grade, loan_int_rate, color = loan_status)) + 
+  geom_point(size=4) + xlab("Loan Grade") + ylab("Interest Rate") + theme(
+    axis.title.x = element_text(size = 16),
+    axis.text.x = element_text(size = 14),
+    axis.title.y = element_text(size = 16))
 
 ggplot(credit_risk_df, aes(loan_int_rate, cb_person_default_on_file, color = loan_status)) + 
   geom_point() ##High correlation between int. rate and loan grade
@@ -97,14 +104,25 @@ ggplot(credit_risk_df, aes(person_age, fill = loan_status)) +
   geom_histogram(stat = "count") +
   facet_wrap(~loan_grade)
 
-ggplot(credit_risk_df, aes(loan_percent_income, fill = loan_status)) + 
+ggplot(credit_risk_df, aes(person_home_ownership, fill = loan_grade)) + 
   geom_histogram(stat = "count") +
-  facet_wrap(~loan_grade)
+  facet_wrap(~loan_status) + xlab("Home Ownership Type") + ylab("Count") + theme(
+    axis.title.x = element_text(size = 16),
+    axis.text.x = element_text(size = 10),
+    axis.title.y = element_text(size = 16))
+
+ggplot(credit_risk_df, aes(loan_intent, fill = loan_grade)) + 
+  geom_histogram(stat = "count") +
+  facet_wrap(~loan_status) + xlab("Loan Intent") + ylab("Count") + theme(
+    axis.title.x = element_text(size = 16),
+    axis.text.x = element_text(size = 10),
+    axis.title.y = element_text(size = 16))
 
 ggplot(credit_risk_df, aes(loan_percent_income, fill = loan_grade)) + 
   geom_histogram(stat = "count") +
   facet_wrap(~loan_status)
 
+##create basic correlation output to look for relationships
 testcor <- na.omit(credit_risk_df)
 testcor$person_home_ownership <- as.numeric(testcor$person_home_ownership)
 testcor$loan_intent <- as.numeric(testcor$loan_intent)
@@ -125,7 +143,7 @@ cor(testcor)
 # %_income/loan_status = .38
 # cb_person_default_on_file/loan_grade = .54
 
-##Correlation matrix creation
+##Correlation heatmap matrix creation
 library(reshape2)
 cormat <- round(cor(testcor),2)
 head(cormat)
