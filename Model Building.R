@@ -34,6 +34,15 @@ Train2 <- fiftydf2[ trainIndex2,]
 Valid2 <- fiftydf2[-trainIndex2,]
 
 ##Linear regression done as a group
+##Steps:
+# Try all
+# Remove cb_person_cred_hist_length
+# Remove cb_person_default_on_file
+# Remove loan_percent_income
+# Remove loan_int_rate
+# Remove log_person_income
+# subset data to remove C level from loan grade
+# Subset data to remove Other from person_home_ownership
 TrainModel3 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = Train, na.action = na.omit)
 summary(TrainModel3)
 car::vif(TrainModel3)
@@ -45,11 +54,12 @@ sd(TrainModel3$residuals)
 library(tseries)
 jarque.bera.test(TrainModel3$residuals) #null hypothesis: data is distribution is normal
 
+set.seed(123)
 TestModel1 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = subset(Test, person_home_ownership != "OTHER"), na.action = na.omit)
 summary(TestModel1)
 
 TestModel2 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = subset(Test, loan_grade != "C"), na.action = na.omit)
-summary(TestModel2)##BEST MODEL FOR OUT-SAMPLE RMSE
+summary(TestModel2)##BEST MODEL FOR OUT-SAMPLE RSE
 
 TestModel4 <- lm(log(person_income) ~.-cb_person_cred_hist_length -cb_person_default_on_file -loan_percent_income -loan_int_rate -log_person_income, data = Test, na.action = na.omit)
 summary(TestModel4)
@@ -112,13 +122,17 @@ sqrt(mean(ValidModel2$residuals^2))
 
 ####
 ##First Logistic Regression
-M_LOG<-glm(loan_status ~. -loan_percent_income -person_income -cb_person_default_on_file -cb_person_cred_hist_length -person_age , data = Train, family = "binomial", na.action = na.omit)
+M_LOG<-glm(loan_status ~.-person_income -cb_person_cred_hist_length -cb_person_default_on_file -person_age -loan_amnt, data = Train, family = "binomial", na.action = na.omit)
 summary(M_LOG)
 exp(cbind(M_LOG$coefficients, confint(M_LOG)))
 
-##out-sample summary statistics
-confusionMatrix(table(predict(M_LOG, Valid2, type="response") >= .5,
-                      Valid2$loan_status == 1), positive='TRUE')
+##in-sample summary statistics
+confusionMatrix(table(predict(M_LOG, Test, type="response") >= .5,
+                      Test$loan_status == 1), positive='TRUE')
+
+##out-sample summary statistics for M_LOG
+confusionMatrix(table(predict(M_LOG, Test, type="response") >= .4,
+                      Test$loan_status == 1), positive='TRUE')
 
 ##Model 1 in-sample summary statistics
 predictions<-predict(M_LOG, Train, type="response")
@@ -142,10 +156,10 @@ ValidView <- cbind(Valid, predictions)
 ##Loop through threshhold values and print out accuracy of each
 p = .1
 while (p < 1){
-  cm <- confusionMatrix(table(predict(M_LOG, Valid, type="response") >= p,
-                              Valid$loan_status == 1), positive='TRUE')
-  overall.Neg_Pred_Value <- cm$byClass['Neg Pred Value']
-  print(overall.Neg_Pred_Value)
+  cm <- confusionMatrix(table(predict(M_LOG, Train, type="response") >= p,
+                              Train$loan_status == 1), positive='TRUE')
+  overall.accuracy <- cm$overall['Accuracy']
+  print(overall.accuracy)
   p <- p + .1
 }
 
@@ -189,7 +203,7 @@ M_CART <- train(loan_status ~., data = Train, trControl=train_control, tuneLengt
 ##the "cv", number = 10 refers to 10-fold cross validation on the training data
 plot(M_CART) #produces plot of cross-validation results
 M_CART$bestTune #returns optimal complexity parameter
-confusionMatrix(predict(M_CART, Valid), Valid$loan_status, positive='1')
+confusionMatrix(predict(M_CART, Test), Test$loan_status, positive='1')
 
 ##WORKING CART##
 ##Test on Train and Valid
@@ -198,7 +212,7 @@ modelcart <- rpart(loan_status ~., data = Train)
 par(xpd = NA) # otherwise on some devices the text is clipped
 plot(modelcart)
 text(modelcart, digits = 3)
-confusionMatrix(modelcart %>% predict(Valid, "class"), Valid$loan_status, positive='1')
+confusionMatrix(modelcart %>% predict(Train, "class"), Train$loan_status, positive='1')
 
 ##Test on Train2 and Valid2
 modelcart2 <- rpart(loan_status ~., data = Train2)
@@ -206,3 +220,17 @@ par(xpd = NA) # otherwise on some devices the text is clipped
 plot(modelcart2)
 text(modelcart2, digits = 3)
 confusionMatrix(modelcart2 %>% predict(Valid2, "class"), Valid2$loan_status, positive='1')
+
+
+# SVM code chunk from Dan:
+
+library(e1071)
+set.seed(1234)
+
+Train$loan_status<-factor(Train$loan_status)
+Test$loan_status<-factor(Test$loan_status)
+TestnoNA<-na.omit(Test)
+TrainnoNA<-na.omit(Train)
+set.seed(1234)
+SVM0<-svm(loan_status~., data = Train)
+confusionMatrix(predict(SVM0, TrainnoNA), TrainnoNA$loan_status, positive= '1')
