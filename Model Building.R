@@ -45,16 +45,16 @@ Valid2 <- fiftydf2[-trainIndex2,]
 # Subset data to remove Other from person_home_ownership
 
 # first OLS model creation
-TrainModel1 <- lm(log(person_income) ~.-loan_percent_income -log_person_income, data = Train, na.action = na.omit)
+TrainModel1 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = Train, na.action = na.omit)
 summary(TrainModel1)
 # VIF check for multicollinearity
-car::vif(TrainModel1) ##loan_grade and loan_int_rate > 10
+car::vif(TrainModel1) 
 plot(TrainModel1$residuals)
 abline(0,0,col='black')
 hist(TrainModel1$residuals)
 summary(TrainModel1$residuals)
 ## Run with Test set
-TestModel1 <- lm(log(person_income) ~.-loan_percent_income -log_person_income, data = Test, na.action = na.omit)
+TestModel1 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = Test, na.action = na.omit)
 summary(TestModel1)
 
 # Test if residuals are normally distributed using jaques-Bera test
@@ -88,6 +88,9 @@ summary(TrainModel3$residuals)
 ## Run with Test set
 TestModel3 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Test, loan_grade != "C"), na.action = na.omit)
 summary(TestModel3)
+## Run with Validation set
+ValidModel3 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Valid, loan_grade != "C"), na.action = na.omit)
+summary(ValidModel3)
 
 # fourth OLS model
 TrainModel4 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Train, loan_grade != "C" & person_home_ownership != "OTHER"), na.action = na.omit)
@@ -137,8 +140,9 @@ confusionMatrix(table(predict(M_LOG, Test, type="response") >= .5,
                       Test$loan_status == 1), positive='TRUE')
 
 ## Second logistic regression model
-CR_LOG1 <- glm(loan_status ~ ., data = Train, family = "binomial")
+CR_LOG1 <- glm(loan_status ~ .-person_income, data = Train, family = "binomial")
 summary(CR_LOG1)
+exp(cbind(CR_LOG1$coefficients, confint(CR_LOG1)))
 
 #in sample error#
 caret::confusionMatrix(table(predict(CR_LOG1, Train, type="response") >= .5,
@@ -164,14 +168,17 @@ plot(modelcart)
 text(modelcart, digits = 3)
 ##in-sample output table
 confusionMatrix(modelcart %>% predict(Train, "class"), Train$loan_status, positive='1')
-##out-sample output table
+##Test set out-sample output table
 confusionMatrix(modelcart %>% predict(Test, "class"), Test$loan_status, positive='1')
+##Validation set out-sample output table
+confusionMatrix(modelcart %>% predict(Valid2, "class"), Valid2$loan_status, positive='1')
+
 
 ##Better graph of CART
 library(rpart)
 install.packages("RColorBrewer")
 library(rpart.plot)
-rpart.plot(modelcart, space = 0, tweak = 2)
+rpart.plot(modelcart, space =0, tweak = 2)
 
 # SVM code chunk from Dan:
 library(e1071)

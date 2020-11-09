@@ -67,7 +67,7 @@ ggplot(credit_risk_df, aes(cb_person_cred_hist_length, person_age ,color = loan_
 ggplot(credit_risk_df, aes(loan_percent_income, loan_amnt ,color = loan_status)) + 
   geom_point(size =2) ##Potential Multicollinearity issue
 
-ggplot(credit_risk_df, aes(loan_int_rate, cb_person_default_on_file ,color = loan_status)) + 
+ggplot(credit_risk_df, aes(person_age, log_person_income ,color = loan_status)) + 
   geom_point(size =2)
 
 ggplot(credit_risk_df, aes(log(person_income), loan_int_rate, color = loan_grade)) + 
@@ -97,7 +97,7 @@ ggplot(credit_risk_df, aes(loan_percent_income, fill = loan_grade)) +
 ggplot(credit_risk_df, aes(loan_status, fill = loan_grade)) + 
   geom_histogram(stat = "count")
 
-ggplot(credit_risk_df, aes(cb_person_default_on_file, fill = loan_grade)) + 
+ggplot(credit_risk_df, aes(person_income, fill = loan_grade)) + 
   geom_histogram(stat = "count")
 
 ggplot(credit_risk_df, aes(person_age, fill = loan_status)) + 
