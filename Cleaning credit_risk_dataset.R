@@ -46,6 +46,7 @@ ggplot(credit_risk_dataset_Original, aes(person_age, person_emp_length)) +
     axis.title.y = element_text(size = 16))
 
 ##Create visulizations of relationships
+
 plot(credit_risk_df$person_age, log(credit_risk_df$person_income))
 hist(log(credit_risk_df$person_income))
 
@@ -94,7 +95,7 @@ ggplot(credit_risk_df, aes(loan_status, fill = person_home_ownership)) +
 ggplot(credit_risk_df, aes(loan_percent_income, fill = loan_grade)) + 
   geom_histogram(stat = "count")
 
-ggplot(credit_risk_df, aes(loan_status, fill = loan_grade)) + 
+ggplot(credit_risk_df, aes(person_home_ownership, fill = loan_status)) + 
   geom_histogram(stat = "count")
 
 ggplot(credit_risk_df, aes(person_income, fill = loan_grade)) + 

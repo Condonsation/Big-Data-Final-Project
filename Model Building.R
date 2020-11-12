@@ -49,7 +49,7 @@ TrainModel1 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file
 summary(TrainModel1)
 # VIF check for multicollinearity
 car::vif(TrainModel1) 
-plot(TrainModel1$residuals)
+plot(TrainModel1$fitted.values,TrainModel1$residuals)
 abline(0,0,col='black')
 hist(TrainModel1$residuals)
 summary(TrainModel1$residuals)
@@ -76,7 +76,7 @@ TestModel2 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file 
 summary(TestModel2)
 
 # third OLS model
-TrainModel3 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Train, loan_grade != "C"), na.action = na.omit)
+TrainModel3 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Train, loan_grade != "C"))
 summary(TrainModel3)
 # VIF check for multicollinearity
 car::vif(TrainModel3) ##all under 10
@@ -85,6 +85,9 @@ plot(TrainModel3$residuals)
 abline(0,0,col='black')
 hist(TrainModel3$residuals)
 summary(TrainModel3$residuals)
+##Test for heteroskasdicity
+library(lmtest)
+bptest(TrainModel3) ##reject null, evidence of heteroskasdicity
 ## Run with Test set
 TestModel3 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Test, loan_grade != "C"), na.action = na.omit)
 summary(TestModel3)
@@ -105,12 +108,14 @@ summary(TrainModel4$residuals)
 
 # Test if residuals are normally distributed using jaques-Bera test
 library(tseries)
-jarque.bera.test(TrainModel4$residuals) #null hypothesis: data is distribution is normal
+jarque.bera.test(TrainModel4$residuals) #null hypothesis: residual distribution is normal
 par(mfrow=c(2,2)) # init 4 charts in 1 panel
 plot(TrainModel4) ## Check to heteroskedasticity 
 ## Run with Test set
 TestModel4 <- lm(log(person_income) ~.-loan_int_rate -cb_person_default_on_file -cb_person_cred_hist_length -loan_percent_income -log_person_income, data = subset(Test, loan_grade != "C" & person_home_ownership != "OTHER"), na.action = na.omit)
 summary(TestModel4)
+
+
 
 ##RMSE in one line. Same value from
 sqrt(mean(TestModel4$residuals^2))
@@ -186,7 +191,7 @@ Train$loan_status<-factor(Train$loan_status)
 Test$loan_status<-factor(Test$loan_status)
 TestnoNA<-na.omit(Test)
 TrainnoNA<-na.omit(Train)
-SVM0<-svm(loan_status~., data = Train)
+SVM0<-svm(loan_status~.-person_income, data = Train)
 ##in-sample output table
 confusionMatrix(predict(SVM0, TrainnoNA), TrainnoNA$loan_status, positive= '1')
 ##out-sample output table
